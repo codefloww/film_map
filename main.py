@@ -9,20 +9,22 @@ def create_map(location: tuple) -> object:
     map = folium.Map(location=location, zoom_start=5,control_scale=True)
     films_layer = folium.FeatureGroup(name = 'films')
     closest_films_in_year_layer = folium.FeatureGroup(name = 'closest films')
-    # closest_films = find_closest_locations(films,location)
 
-    films_layer.add_child(folium.Marker(location=films["Location"],popup=films['Name'],icon = folium.Icon()))
+    # films_layer.add_child(folium.Marker(location=films["Location"],popup=films['Name'],icon = folium.Icon()))
     # closest_films_in_year_layer.add_child(folium.Marker(location=film_location,popup = film_name+'\n'+str(film_year), icon = folium.Icon()))
 
-    # for film in films:
-    #     film_name = film[0]
-    #     film_year = film[1]
-    #     film_location = find_location(film[-1])
-    #     films_layer.add_child(folium.Marker(location=film_location,popup = film_name+'\n'+film_year, icon = folium.Icon()))
-    # for film in closest_films:
-    #     film_name = film[0]
-    #     film_year = film[1]
-    #     film_location = find_location(film[-1])
+    for i in range(len(films)):
+        film_name = films.iloc[i]["Name"]
+        film_year = films.iloc[i]["Year"]
+        film_location = films.iloc[i]["Coordinates"]
+        films_layer.add_child(folium.Marker(location=film_location,popup = film_name, icon = folium.Icon()))
+    
+    closest_films = find_closest_locations(films,location,'2006')
+    for i in range(len(closest_films)):
+        film_name = closest_films.iloc[i]["Name"]
+        film_year = closest_films.iloc[i]["Year"]
+        film_location = closest_films.iloc[i]["Coordinates"]
+        closest_films_in_year_layer.add_child(folium.Marker(location=film_location,popup = film_name, icon = folium.Icon()))
     map.add_child(films_layer)
     map.add_child(closest_films_in_year_layer)
     map.add_child(folium.LayerControl())
@@ -47,7 +49,7 @@ def get_films_info(path:str) -> object:
             place,
         ]
     films = pandas.DataFrame(films[:-1],columns=['Name','Year','Location'])
-    return films[:100]
+    return films[:10]
 
 
 def find_location(place:str):
@@ -57,6 +59,7 @@ def find_location(place:str):
     try:
         location = geolocator.geocode(place)
         if location == None:
+            return -179,-179
             raise GeocoderUnavailable
     except GeocoderUnavailable:
         return find_location(', '.join(place.split(', ')[1:]))
@@ -69,18 +72,21 @@ def find_distance(coords_1,coords_2):
     return geopy.distance.distance(coords_1,coords_2).km
 
 
-def find_closest_locations(films, location):
-    closest_films = []
-    for film in films:
-        film_location = find_location(film[-1])
+def find_closest_locations(films, location, year):
+    year_films = films.loc[films["Year"] == year]
+    closest_films = pandas.DataFrame(columns=['Name','Year','Location','Coordinates','Distance'])
+    for i in range(len(year_films)):
+        film_location = year_films.iloc[i]["Coordinates"]
         geo_distance = find_distance(location, film_location)
         if len(closest_films)<5:
-            closest_films.append([film,geo_distance])
-            closest_films.sort(key= lambda x: x[1])
-        elif len(closest_films) == 5 and geo_distance<closest_films[4][1]:
-            closest_films.pop()
-            closest_films.append([film,geo_distance])
-            closest_films.sort(key= lambda x: x[1])
+            year_films.iloc[i]['Distance'] = geo_distance
+            closest_films = closest_films.append(year_films.iloc[i],ignore_index=True)
+            print(closest_films)
+            closest_films.sort_values(by = 'Distance',ascending=False)
+        elif len(closest_films) == 5 and geo_distance<closest_films.last()["Distance"]:
+            closest_films.drop(closest_films.tail().index,inplace=True)
+            closest_films = closest_films.append(year_films.iloc[i],ignore_index=True)
+            closest_films.sort_values(by = 'Distance',ascending=False,inplace=True)
     return closest_films  
 
 if __name__ == "__main__":
