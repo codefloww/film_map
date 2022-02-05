@@ -19,12 +19,15 @@ def get_films_info(path:str) -> object:
             place,
         ]
     films = pandas.DataFrame(films[:-1],columns=['Name','Year','Location'])
-    return films[:1000]
+    return films[:10000]
+
+
 @cache
 def find_location(place:str):
     from geopy.geocoders import Nominatim
     from geopy.exc import GeocoderUnavailable
     geolocator = Nominatim(user_agent='my-request',timeout=1)
+    print(place)
     # if place in ['',' ']:
     #     return -179,-179
     try:
@@ -32,8 +35,10 @@ def find_location(place:str):
         if location == None:
             raise GeocoderUnavailable
     except GeocoderUnavailable:
-        # return find_location(', '.join(place.split(', ')[1:]))
-        return -179, -179
+        if ',' not in place:
+            return -179,-179
+        else:
+            return find_location(', '.join(place.split(', ')[1:]))
     return location.latitude, location.longitude
 
     
