@@ -2,25 +2,25 @@
 import pandas
 import folium
 from functools import cache
+import argparse
 
 
-def create_map(location: tuple) -> object:
+def create_map(path: str, location: tuple, year: int, fast_procesing: bool) -> object:
 
     map = folium.Map(location=location, zoom_start=5, control_scale=True)
-
-    # films = get_films_info("locations.list") getting films from list
-    films = get_films_info_from_csv(
-        "locations_250000.csv"
-    )  # getting films from csv with coordinates
+    if fast_procesing:
+        films = get_films_info_from_csv(path)  # getting films from csv with coordinates
+    else:
+        films = get_films_info(path)  # getting films from list
     local_films = find_films_in_Lviv(films)
-    closest_films = find_closest_locations(films, location, "1906")
+    closest_films = find_closest_locations(films, location, str(year))
     local_films_layer = create_layer(local_films, "local films")
     closest_films_in_year_layer = create_layer(closest_films, "closest films")
 
     map.add_child(local_films_layer)
     map.add_child(closest_films_in_year_layer)
     map.add_child(folium.LayerControl())
-    map.save("Map_1.html")
+    map.save("Film_map.html")
 
 
 def create_layer(films, name):
@@ -127,5 +127,37 @@ def find_films_in_Lviv(films):
 
 
 if __name__ == "__main__":
-    location = [49.817545, 24.023932]
-    create_map(location)
+    parser = argparse.ArgumentParser(
+        description="""Film map. \n
+This program creates web map with films which are 5 closest to given location in certain year and
+films which were filmed in Lviv""",
+        usage="You type required arguments and it run program which creates html file with map",
+    )
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
+        "--path",
+        type=str,
+        help="Path to list with information about films",
+    )
+    group.add_argument(
+        "--fast",
+        action="store_true",
+        help="This is the argument for smaller database and faster work of program",
+    )
+    parser.add_argument(
+        "--year",
+        type=int,
+        default=1900,
+        help="Year of films for closest (default: 1900)",
+    )
+    parser.add_argument(
+        "--lat", type=float, default=49.817545, help="Latitude for your location"
+    )
+    parser.add_argument(
+        "--lng", type=float, default=24.023932, help="Longtitude for your location"
+    )
+    args = parser.parse_args()
+    if args.fast:
+        create_map("locations_250000.csv", (args.lat, args.lng), args.year, args.fast)
+    else:
+        create_map(args.path, (args.lat, args.lng), args.year, args.fast)
