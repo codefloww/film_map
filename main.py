@@ -6,36 +6,38 @@ from functools import cache
 
 def create_map(location: tuple) -> object:
 
-    films = get_films_info("locations.list")
     map = folium.Map(location=location, zoom_start=5, control_scale=True)
-    local_films_layer = folium.FeatureGroup(name=" local films")
-    closest_films_in_year_layer = folium.FeatureGroup(name="closest films")
+
+    # films = get_films_info("locations.list") getting films from list
+    films = get_films_info_from_csv(
+        "locations_250000.csv"
+    )  # getting films from csv with coordinates
     local_films = find_films_in_Lviv(films)
-    # films_layer.add_child(folium.Marker(location=films["Location"],popup=films['Name'],icon = folium.Icon()))
-    # closest_films_in_year_layer.add_child(folium.Marker(location=film_location,popup = film_name+'\n'+str(film_year), icon = folium.Icon()))
-
-    for i in range(len(local_films)):
-        film_name = local_films.iloc[i]["Name"]
-        film_year = local_films.iloc[i]["Year"]
-        film_location = local_films.ilco[i]["Location"]
-        film_coordinates = local_films.iloc[i]["Coordinates"]
-        local_films_layer.add_child(
-            folium.Marker(location=film_coordinates, popup=f'{film_name}\n{film_year}\n{film_location}', icon=folium.Icon())
-        )
-
     closest_films = find_closest_locations(films, location, "1906")
-    for i in range(len(closest_films)):
-        film_name = closest_films.iloc[i]["Name"]
-        film_year = closest_films.iloc[i]["Year"]
-        film_location = closest_films.iloc[i]["Location"]
-        film_coordinates = closest_films.iloc[i]["Coordinates"]
-        closest_films_in_year_layer.add_child(
-            folium.Marker(location=film_coordinates, popup=f'{film_name}\n{film_year}\n{film_location}', icon=folium.Icon())
-        )
+    local_films_layer = create_layer(local_films, "local films")
+    closest_films_in_year_layer = create_layer(closest_films, "closest films")
+
     map.add_child(local_films_layer)
     map.add_child(closest_films_in_year_layer)
     map.add_child(folium.LayerControl())
     map.save("Map_1.html")
+
+
+def create_layer(films, name):
+    films_layer = folium.FeatureGroup(name=name)
+    for i in range(len(films)):
+        film_name = films.iloc[i]["Name"]
+        film_year = films.iloc[i]["Year"]
+        film_location = films.iloc[i]["Location"]
+        film_coordinates = films.iloc[i]["Coordinates"]
+        films_layer.add_child(
+            folium.Marker(
+                location=film_coordinates,
+                popup=f"{film_name}\n{film_year}\n{film_location}",
+                icon=folium.Icon(),
+            )
+        )
+    return films_layer
 
 
 def get_films_info(path: str) -> object:
@@ -56,6 +58,13 @@ def get_films_info(path: str) -> object:
             place,
         ]
     films = pandas.DataFrame(films[:-1], columns=["Name", "Year", "Location"])
+    return films
+
+
+def get_films_info_from_csv(path):
+    import ast
+
+    films = pandas.read_csv(path, converters={"Coordinates": ast.literal_eval})
     return films
 
 
@@ -82,7 +91,8 @@ def find_distance(coords_1, coords_2):
 
 def find_closest_locations(films, location, year):
     year_films = films.loc[films["Year"] == year]
-    year_films["Coordinates"] = year_films["Location"].apply(find_location)
+    if "Coordinates" not in year_films.columns:
+        year_films["Coordinates"] = year_films["Location"].apply(find_location)
     closest_films = pandas.DataFrame(
         columns=["Name", "Year", "Location", "Coordinates", "Distance"]
     )
@@ -107,9 +117,12 @@ def find_closest_locations(films, location, year):
 
 
 def find_films_in_Lviv(films):
+    films.dropna(inplace=True)
     local_films = films.loc[films["Location"].str.contains("Lviv")]
-    print(local_films)
-    local_films["Coordinates"] = local_films["Location"].apply(find_location)
+    # local_films.info()
+    if "Cooridinates" not in local_films.columns:
+        local_films["Coordinates"] = local_films["Location"].apply(find_location)
+    # print(local_films)
     return local_films
 
 
