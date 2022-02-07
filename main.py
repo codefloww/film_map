@@ -24,16 +24,23 @@ def create_map(path: str, location: tuple, year: int, fast_procesing: bool) -> o
 
 
 def create_layer(films, name):
+    films_locations = dict()
+    for i in range(len(films)):
+        if str(films.iloc[i]["Coordinates"]) in films_locations.keys():
+            films_locations[str(films.iloc[i]['Coordinates'])].append((films.iloc[i]["Name"],films.iloc[i]["Year"]))
+        else:
+            films_locations[str(films.iloc[i]["Coordinates"])] = [(films.iloc[i]["Name"],films.iloc[i]["Year"])]
     films_layer = folium.FeatureGroup(name=name)
     for i in range(len(films)):
-        film_name = films.iloc[i]["Name"]
-        film_year = films.iloc[i]["Year"]
-        film_location = films.iloc[i]["Location"]
+        # film_name = films.iloc[i]["Name"]
+        # film_year = films.iloc[i]["Year"]
+        # film_location = films.iloc[i]["Location"]
         film_coordinates = films.iloc[i]["Coordinates"]
         films_layer.add_child(
             folium.Marker(
                 location=film_coordinates,
-                popup=f"{film_name}\n{film_year}\n{film_location}",
+                # popup=f"{film_name}\n{film_year}\n{film_location}",
+                popup = films_locations[str(films.iloc[i]["Coordinates"])],
                 icon=folium.Icon(),
             )
         )
