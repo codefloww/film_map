@@ -1,4 +1,5 @@
 """module for web map with films locations in certain years"""
+from cgitb import html
 import pandas
 import folium
 from functools import cache
@@ -27,9 +28,13 @@ def create_layer(films, name):
     films_locations = dict()
     for i in range(len(films)):
         if str(films.iloc[i]["Coordinates"]) in films_locations.keys():
-            films_locations[str(films.iloc[i]['Coordinates'])].append((films.iloc[i]["Name"],films.iloc[i]["Year"]))
+            films_locations[str(films.iloc[i]["Coordinates"])].append(
+                (films.iloc[i]["Name"], films.iloc[i]["Year"])
+            )
         else:
-            films_locations[str(films.iloc[i]["Coordinates"])] = [(films.iloc[i]["Name"],films.iloc[i]["Year"])]
+            films_locations[str(films.iloc[i]["Coordinates"])] = [
+                (films.iloc[i]["Name"], films.iloc[i]["Year"])
+            ]
     films_layer = folium.FeatureGroup(name=name)
     for i in range(len(films)):
         # film_name = films.iloc[i]["Name"]
@@ -40,15 +45,27 @@ def create_layer(films, name):
             folium.Marker(
                 location=film_coordinates,
                 # popup=f"{film_name}\n{film_year}\n{film_location}",
-                popup = films_locations[str(films.iloc[i]["Coordinates"])],
+                popup=create_html_popup(
+                    films_locations[str(films.iloc[i]["Coordinates"])]
+                ),
                 icon=folium.Icon(),
             )
         )
     return films_layer
 
 
+def create_html_popup(films):
+    html_template = """Films:"""
+    for film in films:
+        html_template += f"""<br>
+        <a href="https://www.google.com/search?q=%22{film[0]}%22"
+        target="_blank">{film[0], film[1]}</a><br>
+        """
+    return html_template
+
+
 def get_films_info(path: str) -> object:
-    with open(path, "r", errors="ignore") as data:
+    with open(path, "r", encoding="utf-8", errors="ignore") as data:
         for _ in range(14):
             data.readline()
         films = data.readlines()
