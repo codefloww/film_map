@@ -69,30 +69,41 @@ def create_html_popup(films: list) -> str:
 
 
 def get_films_info(path: str) -> pd.DataFrame:
-    with open(path, "r", encoding="utf-8", errors="ignore") as data:
-        for _ in range(14):
-            data.readline()
-        films = data.readlines()
+    try:
+        with open(path, "r", encoding="utf-8", errors="ignore") as data:
+            for _ in range(14):
+                data.readline()
+            films = data.readlines()
+        for i, film in enumerate(films):
+            if film[-2] == ")":
+                name_and_year, place = film.split("\t")[0], film.split("\t")[-2]
+            else:
+                name_and_year, place = film.split("\t")[0], film.split("\t")[-1][:-1]
+            year_start = name_and_year.find("(")
+            films[i] = [
+                name_and_year[: year_start - 1],
+                name_and_year[year_start + 1 : year_start + 5],
+                place,
+            ]
+        films = pd.DataFrame(films[:-1], columns=["Name", "Year", "Location"])
 
-    for i, film in enumerate(films):
-        if film[-2] == ")":
-            name_and_year, place = film.split("\t")[0], film.split("\t")[-2]
-        else:
-            name_and_year, place = film.split("\t")[0], film.split("\t")[-1][:-1]
-        year_start = name_and_year.find("(")
-        films[i] = [
-            name_and_year[: year_start - 1],
-            name_and_year[year_start + 1 : year_start + 5],
-            place,
-        ]
-    films = pd.DataFrame(films[:-1], columns=["Name", "Year", "Location"])
+    except FileNotFoundError:
+        print("There is no such file")
+        films = pd.DataFrame(columns=["Name", "Year", "Location"])
+
     return films
 
 
 def get_films_info_from_csv(path: str) -> pd.DataFrame:
     import ast
 
-    films = pd.read_csv(path, converters={"Coordinates": ast.literal_eval})
+    try:
+        films = pd.read_csv(path, converters={"Coordinates": ast.literal_eval})
+
+    except FileNotFoundError:
+        print("There is no such file with this path")
+        films = pd.DataFrame(columns=["Name", "Year", "Location", "Coordinates"])
+
     return films
 
 
@@ -102,6 +113,8 @@ def find_location(place: str) -> tuple:
     from geopy.geocoders import Nominatim
 
     geolocator = Nominatim(user_agent="my-request")
+    if place in ["", " ", ",", ", "]:
+        return -69, -179
     try:
         location = geolocator.geocode(place)
         if location == None:
@@ -154,7 +167,7 @@ def find_films_in_location(films: pd.DataFrame) -> pd.DataFrame:
     return local_films
 
 
-def open_web_map(name:str) -> None:
+def open_web_map(name: str) -> None:
     import os
     import webbrowser
 
@@ -210,9 +223,10 @@ films which were filmed in Lviv""",
             args.opened,
         )
     else:
-        create_map(args.path,
+        create_map(
+            args.path,
             (args.lat, args.lng),
             args.year,
             args.fast,
             args.opened,
-            )
+        )
