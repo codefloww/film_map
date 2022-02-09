@@ -1,30 +1,34 @@
 """module for web map with films locations in certain years"""
-from cgitb import html
-import pandas
-import folium
-from functools import cache
 import argparse
+from functools import cache
+import folium
+import pandas as pd
 
 
-def create_map(path: str, location: tuple, year: int, fast_procesing: bool) -> object:
-
+def create_map(
+    path: str, location: tuple, year: int, fast_procesing: bool, opened: bool
+) -> object:
     map = folium.Map(location=location, zoom_start=5, control_scale=True)
     if fast_procesing:
-        films = get_films_info_from_csv(path)  # getting films from csv with coordinates
+        films = get_films_info_from_csv(path)
     else:
-        films = get_films_info(path)  # getting films from list
-    local_films = find_films_in_Lviv(films)
+        films = get_films_info(path)
+    local_films = find_films_in_location(films)
     closest_films = find_closest_locations(films, location, str(year))
-    local_films_layer = create_layer(local_films, "local films")
-    closest_films_in_year_layer = create_layer(closest_films, "closest films")
+    local_films_layer = create_layer(local_films, "Films in location")
+    closest_films_in_year_layer = create_layer(
+        closest_films, f"Closest films in {year}"
+    )
 
     map.add_child(local_films_layer)
     map.add_child(closest_films_in_year_layer)
     map.add_child(folium.LayerControl())
     map.save("Film_map.html")
+    if opened:
+        open_web_map("Film_map.html")
 
 
-def create_layer(films, name):
+def create_layer(films: pd.DataFrame, name: str) -> folium.FeatureGroup:
     films_locations = dict()
     for i in range(len(films)):
         if str(films.iloc[i]["Coordinates"]) in films_locations.keys():
@@ -54,17 +58,17 @@ def create_layer(films, name):
     return films_layer
 
 
-def create_html_popup(films):
-    html_template = """Films:"""
+def create_html_popup(films: list) -> str:
+    html_template = "Films:"
     for film in films:
         html_template += f"""<br>
-        <a href="https://www.google.com/search?q=%22{film[0]}%22"
+        <a href="https://www.google.com/search?q=%22{film[0].strip('"')}%22"
         target="_blank">{film[0], film[1]}</a><br>
         """
     return html_template
 
 
-def get_films_info(path: str) -> object:
+def get_films_info(path: str) -> pd.DataFrame:
     with open(path, "r", encoding="utf-8", errors="ignore") as data:
         for _ in range(14):
             data.readline()
@@ -81,21 +85,21 @@ def get_films_info(path: str) -> object:
             name_and_year[year_start + 1 : year_start + 5],
             place,
         ]
-    films = pandas.DataFrame(films[:-1], columns=["Name", "Year", "Location"])
+    films = pd.DataFrame(films[:-1], columns=["Name", "Year", "Location"])
     return films
 
 
-def get_films_info_from_csv(path):
+def get_films_info_from_csv(path: str) -> pd.DataFrame:
     import ast
 
-    films = pandas.read_csv(path, converters={"Coordinates": ast.literal_eval})
+    films = pd.read_csv(path, converters={"Coordinates": ast.literal_eval})
     return films
 
 
 @cache
-def find_location(place: str):
-    from geopy.geocoders import Nominatim
+def find_location(place: str) -> tuple:
     from geopy.exc import GeocoderUnavailable
+    from geopy.geocoders import Nominatim
 
     geolocator = Nominatim(user_agent="my-request")
     try:
@@ -107,17 +111,19 @@ def find_location(place: str):
     return location.latitude, location.longitude
 
 
-def find_distance(coords_1, coords_2):
+def find_distance(coords_1: tuple, coords_2: tuple) -> float:
     import geopy.distance
 
     return geopy.distance.distance(coords_1, coords_2).km
 
 
-def find_closest_locations(films, location, year):
+def find_closest_locations(
+    films: pd.DataFrame, location: tuple, year: int
+) -> pd.DataFrame:
     year_films = films.loc[films["Year"] == year]
     if "Coordinates" not in year_films.columns:
         year_films["Coordinates"] = year_films["Location"].apply(find_location)
-    closest_films = pandas.DataFrame(
+    closest_films = pd.DataFrame(
         columns=["Name", "Year", "Location", "Coordinates", "Distance"]
     )
     year_films["Distance"] = year_films["Coordinates"].apply(
@@ -136,18 +142,25 @@ def find_closest_locations(films, location, year):
             closest_films.drop(closest_films.tail().index, inplace=True)
             closest_films = closest_films.append(year_films.iloc[i], ignore_index=True)
             closest_films.sort_values(by="Distance", ascending=False, inplace=True)
-    print(closest_films)
     return closest_films
 
 
-def find_films_in_Lviv(films):
+def find_films_in_location(films: pd.DataFrame) -> pd.DataFrame:
     films.dropna(inplace=True)
-    local_films = films.loc[films["Location"].str.contains("Lviv")]
-    # local_films.info()
+    # change for more precise address for better performance
+    local_films = films.loc[films["Location"].str.contains("Ukraine")]
     if "Cooridinates" not in local_films.columns:
         local_films["Coordinates"] = local_films["Location"].apply(find_location)
-    # print(local_films)
     return local_films
+
+
+def open_web_map(name:str) -> None:
+    import os
+    import webbrowser
+
+    new = 2
+    url = "file://" + os.path.realpath(name)
+    webbrowser.open(url, new=new)
 
 
 if __name__ == "__main__":
@@ -175,13 +188,31 @@ films which were filmed in Lviv""",
         help="Year of films for closest (default: 1900)",
     )
     parser.add_argument(
-        "--lat", type=float, default=49.817545, help="Latitude for your location"
+        "--lat",
+        type=float,
+        default=49.817545,
+        help="Latitude for your location (default:49.817545)",
     )
     parser.add_argument(
-        "--lng", type=float, default=24.023932, help="Longtitude for your location"
+        "--lng",
+        type=float,
+        default=24.023932,
+        help="Longtitude for your location (default:24.023932)",
     )
+    parser.add_argument("--opened", action="store_true", help="Instantly opens web map")
     args = parser.parse_args()
     if args.fast:
-        create_map("locations_250000.csv", (args.lat, args.lng), args.year, args.fast)
+        create_map(
+            "locations_250000.csv",
+            (args.lat, args.lng),
+            args.year,
+            args.fast,
+            args.opened,
+        )
     else:
-        create_map(args.path, (args.lat, args.lng), args.year, args.fast)
+        create_map(args.path,
+            (args.lat, args.lng),
+            args.year,
+            args.fast,
+            args.opened,
+            )
