@@ -1,6 +1,7 @@
 """Allows to create csv file with coordinates for locations from list"""
-from functools import cache
+import functools
 import pandas as pd
+from typing import Tuple
 
 
 def get_films_info(path: str) -> pd.DataFrame:
@@ -17,15 +18,15 @@ def get_films_info(path: str) -> pd.DataFrame:
         year_start = name_and_year.find("(")
         films[i] = [
             name_and_year[: year_start - 1],
-            name_and_year[year_start + 1 : year_start + 5],
+            name_and_year[year_start + 1: year_start + 5],
             place,
         ]
     films = pd.DataFrame(films[:-1], columns=["Name", "Year", "Location"])
     return films[:10:2]  # which size of original file you need
 
 
-@cache
-def find_location(place: str) -> tuple[float, float]:
+@functools.lru_cache(maxsize=500000)
+def find_location(place: str) -> Tuple[float, float]:
     from geopy.geocoders import Nominatim
     from geopy.exc import GeocoderUnavailable
 

@@ -54,7 +54,7 @@ def test_find_location():
 
 
 def test_find_distance():
-    assert find_distance((60, 150), (30, 15)) == 9217.599329357261
+    assert round(find_distance((60, 150), (30, 15)), 5) == 9217.59933
     assert find_distance((0, 0), (0, 0)) == 0.0
 
 
@@ -71,6 +71,9 @@ def test_find_closest_locations():
         ),
         pd.DataFrame,
     )
+
+
+def test_find_films_in_location():
     assert isinstance(
         find_films_in_location(
             pd.DataFrame(

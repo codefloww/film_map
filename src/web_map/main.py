@@ -1,13 +1,14 @@
 """module for web map with films locations in certain years"""
 import argparse
-from functools import cache
+import functools
+from typing import Dict, List, Tuple, Union
 import folium
 import pandas as pd
 
 
 def create_map(
     path: str,
-    location: tuple[float, float],
+    location: Tuple[float, float],
     year: int,
     fast_procesing: bool,
     opened: bool,
@@ -23,7 +24,15 @@ def create_map(
     closest_films_in_year_layer = create_layer(
         closest_films, f"Closest films in {year}"
     )
-
+    current_location = folium.CircleMarker(
+        location=location,
+        radius=10,
+        popup="Я тут)",
+        fill_color="green",
+        color="green",
+        fill_opacity=0.5,
+    )
+    map.add_child(current_location)
     map.add_child(local_films_layer)
     map.add_child(closest_films_in_year_layer)
     map.add_child(folium.LayerControl())
@@ -33,7 +42,7 @@ def create_map(
 
 
 def create_layer(films: pd.DataFrame, name: str) -> folium.FeatureGroup:
-    films_locations = dict()
+    films_locations: Dict[str, List[tuple]] = dict()
     for i in range(len(films)):
         if str(films.iloc[i]["Coordinates"]) in films_locations.keys():
             films_locations[str(films.iloc[i]["Coordinates"])].append(
@@ -49,26 +58,29 @@ def create_layer(films: pd.DataFrame, name: str) -> folium.FeatureGroup:
         # film_year = films.iloc[i]["Year"]
         # film_location = films.iloc[i]["Location"]
         film_coordinates = films.iloc[i]["Coordinates"]
+        iframe = folium.IFrame(
+            html=create_html_popup(films_locations[str(films.iloc[i]["Coordinates"])]),
+            width=250,
+            height=150,
+        )
         films_layer.add_child(
             folium.Marker(
                 location=film_coordinates,
-                # popup=f"{film_name}\n{film_year}\n{film_location}",
-                popup=create_html_popup(
-                    films_locations[str(films.iloc[i]["Coordinates"])]
-                ),
+                popup=folium.Popup(iframe),
                 icon=folium.Icon(),
             )
         )
     return films_layer
 
 
-def create_html_popup(films: list[str]) -> str:
+def create_html_popup(films: List[str]) -> str:
     html_template = "Films:"
     for film in films:
         html_template += f"""<br>
         <a href="https://www.google.com/search?q=%22{film[0].strip('"')}%22"
         target="_blank">{film[0], film[1]}</a><br>
         """
+    print(html_template)
     return html_template
 
 
@@ -86,7 +98,7 @@ def get_films_info(path: str) -> pd.DataFrame:
             year_start = name_and_year.find("(")
             films[i] = [
                 name_and_year[: year_start - 1],
-                name_and_year[year_start + 1 : year_start + 5],
+                name_and_year[year_start + 1: year_start + 5],
                 place,
             ]
         films = pd.DataFrame(films[:-1], columns=["Name", "Year", "Location"])
@@ -111,17 +123,17 @@ def get_films_info_from_csv(path: str) -> pd.DataFrame:
     return films
 
 
-@cache
-def find_location(place: str) -> tuple[float, float]:
+@functools.lru_cache(maxsize=512000)
+def find_location(place: str) -> Tuple[float, float]:
     from geopy.exc import GeocoderUnavailable
     from geopy.geocoders import Nominatim
 
     geolocator = Nominatim(user_agent="my-request")
     if place in ["", " ", ",", ", "]:
-        return -69, -179
+        return -69.0, -179.0
     try:
         location = geolocator.geocode(place)
-        if location == None:
+        if location is None:
             raise GeocoderUnavailable
     except GeocoderUnavailable:
         return find_location(", ".join(place.split(", ")[1:]))
@@ -129,15 +141,15 @@ def find_location(place: str) -> tuple[float, float]:
 
 
 def find_distance(
-    coords_1: tuple[float, float], coords_2: tuple[float, float]
-) -> float:
+    coords_1: Tuple[float, float], coords_2: Tuple[float, float]
+) -> Union[float, None]:
     import geopy.distance
 
     return geopy.distance.distance(coords_1, coords_2).km
 
 
 def find_closest_locations(
-    films: pd.DataFrame, location: tuple[float, float], year: str
+    films: pd.DataFrame, location: Tuple[float, float], year: str
 ) -> pd.DataFrame:
     year_films = films.loc[films["Year"] == year]
     if "Coordinates" not in year_films.columns:
