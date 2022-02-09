@@ -1,5 +1,5 @@
 import unittest
-import main
+import src.Web_map.main as main
 import pandas as pd
 import folium
 
