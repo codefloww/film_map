@@ -6,8 +6,12 @@ import pandas as pd
 
 
 def create_map(
-    path: str, location: tuple, year: int, fast_procesing: bool, opened: bool
-) -> object:
+    path: str,
+    location: tuple[float, float],
+    year: int,
+    fast_procesing: bool,
+    opened: bool,
+) -> None:
     map = folium.Map(location=location, zoom_start=5, control_scale=True)
     if fast_procesing:
         films = get_films_info_from_csv(path)
@@ -58,7 +62,7 @@ def create_layer(films: pd.DataFrame, name: str) -> folium.FeatureGroup:
     return films_layer
 
 
-def create_html_popup(films: list) -> str:
+def create_html_popup(films: list[str]) -> str:
     html_template = "Films:"
     for film in films:
         html_template += f"""<br>
@@ -108,7 +112,7 @@ def get_films_info_from_csv(path: str) -> pd.DataFrame:
 
 
 @cache
-def find_location(place: str) -> tuple:
+def find_location(place: str) -> tuple[float, float]:
     from geopy.exc import GeocoderUnavailable
     from geopy.geocoders import Nominatim
 
@@ -124,14 +128,16 @@ def find_location(place: str) -> tuple:
     return location.latitude, location.longitude
 
 
-def find_distance(coords_1: tuple, coords_2: tuple) -> float:
+def find_distance(
+    coords_1: tuple[float, float], coords_2: tuple[float, float]
+) -> float:
     import geopy.distance
 
     return geopy.distance.distance(coords_1, coords_2).km
 
 
 def find_closest_locations(
-    films: pd.DataFrame, location: tuple, year: int
+    films: pd.DataFrame, location: tuple[float, float], year: str
 ) -> pd.DataFrame:
     year_films = films.loc[films["Year"] == year]
     if "Coordinates" not in year_films.columns:

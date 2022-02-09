@@ -1,0 +1,13 @@
+LICENSE
+pyproject.toml
+setup.cfg
+setup.py
+src/web_map/create_file.py
+src/web_map/main.py
+src/web_map/py.typed
+src/web_map.egg-info/PKG-INFO
+src/web_map.egg-info/SOURCES.txt
+src/web_map.egg-info/dependency_links.txt
+src/web_map.egg-info/not-zip-safe
+src/web_map.egg-info/requires.txt
+src/web_map.egg-info/top_level.txt
