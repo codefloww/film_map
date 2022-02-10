@@ -5,10 +5,10 @@ Film_map is a project that creates web map of films based on names, locations an
 It utilizes python with a few module such as folium, geopy, pandas and few other, as well as some html knowledge. Main functionality is based on getting films info from files and finding their coordinates. This option can take quite a lot time so I recommend using already preprocessed file from project.
 
 ## Installation
-I recommend you to set up virtual environment before installing.
+I recommend you to set up virtual environment before installing(for unix systems). Follow pretty similar way for Windows except path.
 ```bash
-python -m venv venv
-python -m pip install --upgrade pip setuptools wheel
+python3 -m venv venv
+python3 -m pip install --upgrade pip setuptools wheel
 source venv/bin/activate
 ```
 You can use simple git clone command in your directory to download project.
@@ -19,7 +19,7 @@ There is possible need in ssh token in case of problems with downloading.
 
 Also you can install this project using pip install.(recommended)
 ```bash
-pip install -e git+https://github.com/codefloww/film_map#egg=web-map
+pip3 install -e git+https://github.com/codefloww/film_map#egg=web-map
 ```
 You also need to install dependencies for module after entering in project directory.
 ```bash
@@ -30,14 +30,14 @@ pip install -r requirements.txt
 ## Usage
 Use the project via terminal if you're in project directory:
 ```bash
-python src/web_map/main.py -h
+python3 src/web_map/main.py -h
 ```
 There are a few options which you can use(info by -h or --help).
 More of the functions also in [Example](#example).
 
 Also you can use the package manager pip to use functions from project module.
 ```bash
-pip install web-map
+pip3 install web-map
 ```
 ```python
 import web_map
@@ -48,7 +48,7 @@ You can use this module with your own dataset file(in this case it need to be in
 or with given in project. The result will have similar look as [*Film_map.html*](Film_map.html). 
 To run module you need to run in terminal with some arguments.
 ```bash
-python src/web_map/main.py --fast --year 2004 --opened
+python3 src/web_map/main.py --fast --year 2004 --opened
 ```
 ![Example of generated web map](/assets/images/Web_map_example.jpg)
 The result of such command will be web map(generated from [*locations_250000.csv*](locations_250000.csv) and closest films in 2004) and opened in web browser. You can also pass your coordinates and your own file instead of given.
@@ -65,7 +65,7 @@ improvement to this project. For more comfortable contribution there are provide
 
 In case you want to use tests for this project, you need to install some packages additionaly to installing process.
 ```bash
-pip install -r requirements_dev.txt
+pip3 install -r requirements_dev.txt
 ```
 You can use pytest, mypy, flake8 or tox for testing this project. 
 ```bash
