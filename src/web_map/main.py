@@ -226,7 +226,7 @@ def find_closest_locations(
     Returns:
         pd.DataFrame: closest films of that year to location
     """
-    #filter df and add coords to df if needed
+    # filter df and add coords to df if needed
     year_films = films.loc[films["Year"] == year]
     if "Coordinates" not in year_films.columns:
         year_films["Coordinates"] = year_films["Location"].apply(find_location)
