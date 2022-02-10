@@ -63,22 +63,21 @@ def create_layer(films: pd.DataFrame, name: str) -> folium.FeatureGroup:
         folium.FeatureGroup: web map layer with films
     """
     # dictionary for assigning to marker popup multiple films
-    films_locations: Dict[str, List[Tuple[str, str]]] = dict()
+    films_locations: Dict[Tuple[float, float], List[Tuple[str, str]]] = dict()
     for i in range(len(films)):
-        if str(films.iloc[i]["Coordinates"]) in films_locations.keys():
-            films_locations[str(films.iloc[i]["Coordinates"])].append(
+        if films.iloc[i]["Coordinates"] in films_locations.keys():
+            films_locations[films.iloc[i]["Coordinates"]].append(
                 (films.iloc[i]["Name"], films.iloc[i]["Year"])
             )
         else:
-            films_locations[str(films.iloc[i]["Coordinates"])] = [
+            films_locations[films.iloc[i]["Coordinates"]] = [
                 (films.iloc[i]["Name"], films.iloc[i]["Year"])
             ]
     # create layer for map
     films_layer = folium.FeatureGroup(name=name)
-    for i in range(len(films)):
-        film_coordinates = films.iloc[i]["Coordinates"]
+    for film_coordinates in films_locations.keys():
         iframe = folium.IFrame(
-            html=create_html_popup(films_locations[str(films.iloc[i]["Coordinates"])]),
+            html=create_html_popup(films_locations[film_coordinates]),
             width=250,
             height=100,
         )

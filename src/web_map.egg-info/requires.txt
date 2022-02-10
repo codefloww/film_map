@@ -1,3 +1,4 @@
+requests>=2
 
 [testing]
 pytest>=6.0
