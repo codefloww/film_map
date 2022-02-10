@@ -1,8 +1,8 @@
 # film_map
 Film_map is a project that creates web map of films based on names, locations and year of film producing.
 
-## Desription
-It utilizes python with a few module such as folium, geopy, pandas and few other, as well as some html knowledge. Main functionality is based on getting films info from files and finding their coordinates. This option can take quite a lot time so I recommend using already preprocessed file from project.
+## Description
+It utilizes python with a few module such as folium, geopy, pandas and few other, as well as some html knowledge. Main functionality is based on getting films info from files and finding their coordinates. This option can take quite a lot of time so I recommend using already preprocessed file from project.
 
 ## Installation
 I recommend you to set up virtual environment before installing(for unix systems). Follow pretty similar way for Windows except path.
@@ -17,11 +17,11 @@ git clone git@github.com:codefloww/film_map.git
 ```
 There is possible need in ssh token in case of problems with downloading.
 
-Also you can install this project using pip install.(recommended)
+Also, you can install this project using pip install.(recommended)
 ```bash
 pip3 install -e git+https://github.com/codefloww/film_map#egg=web-map
 ```
-You also need to install dependencies for module after entering in project directory.
+You also need to install dependencies for module. To do this, make the project folder 'web-map' your working directory.
 ```bash
 pip install -r requirements.txt
 ```
@@ -35,7 +35,7 @@ python3 src/web_map/main.py -h
 There are a few options which you can use(info by -h or --help).
 More of the functions also in [Example](#example).
 
-Also you can use the package manager pip to use functions from project module.
+Also, you can use the package manager pip to use functions from project module.
 ```bash
 pip3 install web-map
 ```
@@ -44,7 +44,7 @@ import web_map
 web_map.<main or create_file>.<functionname>(*args, **kwargs)
 ```
 ## Example
-You can use this module with your own dataset file(in this case it need to be in same format as those in project) 
+You can use this module with your own dataset file(in this case it needs to be in the same format as those in project) 
 or with given in project. The result will have similar look as [*Film_map.html*](Film_map.html). 
 To run module you need to run in terminal with some arguments.
 ```bash
@@ -63,7 +63,7 @@ improvement to this project. For more comfortable contribution there are provide
 ## Tests
 ![Tests](https://github.com/codefloww/film_map/actions/workflows/tests.yml/badge.svg)
 
-In case you want to use tests for this project, you need to install some packages additionaly to installing process.
+In case you want to use tests for this project, you need to install some packages additionally to installing process.
 ```bash
 pip3 install -r requirements_dev.txt
 ```
