@@ -13,6 +13,16 @@ def create_map(
     fast_procesing: bool,
     opened: bool,
 ) -> None:
+    """creates web map of films from database
+
+    Args:
+        path (str): path to file with films
+        location (Tuple[float, float]): latitude and longtitude of current location
+        year (int): year of films to search for in closest layer
+        fast_procesing (bool): using preprocesed dataset
+        opened (bool): open web map after generating it
+    """
+    # create map/html
     map = folium.Map(location=location, zoom_start=5, control_scale=True)
     if fast_procesing:
         films = get_films_info_from_csv(path)
@@ -24,9 +34,10 @@ def create_map(
     closest_films_in_year_layer = create_layer(
         closest_films, f"Closest films in {year}"
     )
+    # create marker for user location
     current_location = folium.CircleMarker(
         location=location,
-        radius=10,
+        radius=15,
         popup="Я тут)",
         fill_color="green",
         color="green",
@@ -42,7 +53,17 @@ def create_map(
 
 
 def create_layer(films: pd.DataFrame, name: str) -> folium.FeatureGroup:
-    films_locations: Dict[str, List[tuple]] = dict()
+    """creates layer for web map
+
+    Args:
+        films (pd.DataFrame): films for layer
+        name (str): name of the layer in the web map
+
+    Returns:
+        folium.FeatureGroup: web map layer with films
+    """
+    # dictionary for assigning to marker popup multiple films
+    films_locations: Dict[str, List[Tuple[str, str]]] = dict()
     for i in range(len(films)):
         if str(films.iloc[i]["Coordinates"]) in films_locations.keys():
             films_locations[str(films.iloc[i]["Coordinates"])].append(
@@ -52,16 +73,14 @@ def create_layer(films: pd.DataFrame, name: str) -> folium.FeatureGroup:
             films_locations[str(films.iloc[i]["Coordinates"])] = [
                 (films.iloc[i]["Name"], films.iloc[i]["Year"])
             ]
+    # create layer for map
     films_layer = folium.FeatureGroup(name=name)
     for i in range(len(films)):
-        # film_name = films.iloc[i]["Name"]
-        # film_year = films.iloc[i]["Year"]
-        # film_location = films.iloc[i]["Location"]
         film_coordinates = films.iloc[i]["Coordinates"]
         iframe = folium.IFrame(
             html=create_html_popup(films_locations[str(films.iloc[i]["Coordinates"])]),
             width=250,
-            height=150,
+            height=100,
         )
         films_layer.add_child(
             folium.Marker(
@@ -73,44 +92,69 @@ def create_layer(films: pd.DataFrame, name: str) -> folium.FeatureGroup:
     return films_layer
 
 
-def create_html_popup(films: List[str]) -> str:
+def create_html_popup(films: List[Tuple[str, str]]) -> str:
+    """creates html_template for popup window
+
+    Args:
+        films (List[Tuple[str, str]]): films for this popup
+
+    Returns:
+        str: html string to be showed in popup
+    """
     html_template = "Films:"
     for film in films:
         html_template += f"""<br>
         <a href="https://www.google.com/search?q=%22{film[0].strip('"')}%22"
         target="_blank">{film[0], film[1]}</a><br>
         """
-    print(html_template)
     return html_template
 
 
 def get_films_info(path: str) -> pd.DataFrame:
+    """reads file, converts it by lines in dataframe
+
+    Args:
+        path (str): path to file with films
+
+    Returns:
+        pd.DataFrame: dataframe consisting of films' names,\
+        years and locations
+    """
     try:
         with open(path, "r", encoding="utf-8", errors="ignore") as data:
             for _ in range(14):
                 data.readline()
-            films = data.readlines()
-        for i, film in enumerate(films):
+            films_data = data.readlines()
+            films = []
+        for film in films_data:
             if film[-2] == ")":
                 name_and_year, place = film.split("\t")[0], film.split("\t")[-2]
             else:
                 name_and_year, place = film.split("\t")[0], film.split("\t")[-1][:-1]
             year_start = name_and_year.find("(")
-            films[i] = [
+            films.append([
                 name_and_year[: year_start - 1],
                 name_and_year[year_start + 1: year_start + 5],
                 place,
-            ]
-        films = pd.DataFrame(films[:-1], columns=["Name", "Year", "Location"])
+            ])
+        films_df = pd.DataFrame(films[:-1], columns=["Name", "Year", "Location"])
 
     except FileNotFoundError:
         print("There is no such file")
-        films = pd.DataFrame(columns=["Name", "Year", "Location"])
+        films_df = pd.DataFrame(columns=["Name", "Year", "Location"])
 
-    return films
+    return films_df
 
 
 def get_films_info_from_csv(path: str) -> pd.DataFrame:
+    """gets films' name,year,location,coordinates from csv file into dataframe
+
+    Args:
+        path (str): path to csv file
+
+    Returns:
+        pd.DataFrame: films with names, year, locations and coords
+    """
     import ast
 
     try:
@@ -125,9 +169,21 @@ def get_films_info_from_csv(path: str) -> pd.DataFrame:
 
 @functools.lru_cache(maxsize=512000)
 def find_location(place: str) -> Tuple[float, float]:
+    """finds coords of address
+
+    Args:
+        place (str): address in format of buildinge,\
+            street,town,country
+
+    Raises:
+        GeocoderUnavailable: invalid address or address which is not in database
+
+    Returns:
+        Tuple[float, float]: latitude and longtitude coords of location
+    """
     from geopy.exc import GeocoderUnavailable
     from geopy.geocoders import Nominatim
-
+    # utility for finding location
     geolocator = Nominatim(user_agent="my-request")
     if place in ["", " ", ",", ", "]:
         return -69.0, -179.0
@@ -143,14 +199,34 @@ def find_location(place: str) -> Tuple[float, float]:
 def find_distance(
     coords_1: Tuple[float, float], coords_2: Tuple[float, float]
 ) -> Union[float, None]:
+    """finds distance between two points on Earth using haversin
+
+    Args:
+        coords_1 (Tuple[float, float]): coordinates of first point
+        coords_2 (Tuple[float, float]): coordinates of second point
+
+    Returns:
+        Union[float, None]: distance between two points
+    """
     import geopy.distance
 
-    return geopy.distance.distance(coords_1, coords_2).km
+    return float(geopy.distance.distance(coords_1, coords_2).km)
 
 
 def find_closest_locations(
     films: pd.DataFrame, location: Tuple[float, float], year: str
 ) -> pd.DataFrame:
+    """finds closest films' locations to given location in certain year
+
+    Args:
+        films (pd.DataFrame): films with year and locations
+        location (Tuple[float, float]): your given locatoins closest to which you search
+        year (str): year of films to search for
+
+    Returns:
+        pd.DataFrame: closest films of that year to location
+    """
+    #filter df and add coords to df if needed
     year_films = films.loc[films["Year"] == year]
     if "Coordinates" not in year_films.columns:
         year_films["Coordinates"] = year_films["Location"].apply(find_location)
@@ -160,6 +236,7 @@ def find_closest_locations(
     year_films["Distance"] = year_films["Coordinates"].apply(
         lambda x: find_distance(location, x)
     )
+    # find and create df with closest films
     for i in range(len(year_films)):
         film_location = year_films.iloc[i]["Coordinates"]
         geo_distance = find_distance(location, film_location)
@@ -177,6 +254,14 @@ def find_closest_locations(
 
 
 def find_films_in_location(films: pd.DataFrame) -> pd.DataFrame:
+    """finds films filmed in certain location
+
+    Args:
+        films (pd.DataFrame): films with their locations
+
+    Returns:
+        pd.DataFrame: films which were filmed in certain location
+    """
     films.dropna(inplace=True)
     # change for more precise address for better performance
     local_films = films.loc[films["Location"].str.contains("Ukraine")]
@@ -186,9 +271,14 @@ def find_films_in_location(films: pd.DataFrame) -> pd.DataFrame:
 
 
 def open_web_map(name: str) -> None:
+    """open web map(html file) in browser
+
+    Args:
+        name (str): name of the web map(html file)
+    """
     import os
     import webbrowser
-
+    # open in new tab with url
     new = 2
     url = "file://" + os.path.realpath(name)
     webbrowser.open(url, new=new)
@@ -232,6 +322,7 @@ films which were filmed in Lviv""",
     )
     parser.add_argument("--opened", action="store_true", help="Instantly opens web map")
     args = parser.parse_args()
+    print("Start generating web map")
     if args.fast:
         create_map(
             "locations_250000.csv",
@@ -248,3 +339,4 @@ films which were filmed in Lviv""",
             args.fast,
             args.opened,
         )
+    print("Completed")
