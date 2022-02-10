@@ -5,19 +5,27 @@ Film_map is a project that creates web map of films based on names, locations an
 It utilizes python with a few module such as folium, geopy, pandas and few other, as well as some html knowledge. Main functionality is based on getting films info from files and finding their coordinates. This option can take quite a lot time so I recommend using already preprocessed file from project.
 
 ## Installation
+I recommend you to set up virtual environment before installing.
+```bash
+python -m venv venv
+python -m pip install --upgrade pip setuptools wheel
+source venv/bin/activate
+```
 You can use simple git clone command in your directory to download project.
 ```bash
 git clone git@github.com:codefloww/film_map.git
 ```
 There is possible need in ssh token in case of problems with downloading.
-Also you can install this project using pip install
+
+Also you can install this project using pip install.(recommended)
 ```bash
-pip install -e git+https://github.com/codefloww/film_map#egg=film_map
+pip install -e git+https://github.com/codefloww/film_map#egg=web-map
 ```
 You also need to install dependencies for module after entering in project directory.
 ```bash
 pip install -r requirements.txt
 ```
+
 
 ## Usage
 Use the project via terminal if you're in project directory:
@@ -25,7 +33,8 @@ Use the project via terminal if you're in project directory:
 python src/web_map/main.py -h
 ```
 There are a few options which you can use(info by -h or --help).
-More of the functions also in [Example](Example).
+More of the functions also in [Example](#example).
+
 Also you can use the package manager pip to use functions from project module.
 ```bash
 pip install web-map
