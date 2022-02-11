@@ -211,6 +211,24 @@ def find_distance(
 
     return float(geopy.distance.distance(coords_1, coords_2).km)
 
+# another implemented function for distance calculation
+# def calculate_haversine_distance(latitude1: float, longtitude1: float,
+#     latitude2: float, longtitude2: float):
+#     """
+#     Returns the distance between two locations on Earth with given longitudes and
+#     latitudes.
+#     """
+#     from math import cos, sin
+#     longtitude1, latitude1, longtitude2, latitude2 = map(radians, [longtitude1, latitude1,
+#           longtitude2, latitude2])
+#     distancelng = longtitude2 - longtitude1
+#     distancelat = latitude2 - latitude1
+#     cos_term = (cos(latitude1) * cos(latitude2) * sin(distancelng/2)**2)
+#     sin_term = sin(distancelat/2)
+#     dist_term = 2*asin(sqrt(sin_term**2 + cos_term))
+#     distance = dist_term * 6371
+#     return distance
+
 
 def find_closest_locations(
     films: pd.DataFrame, location: Tuple[float, float], year: str
